@@ -1,5 +1,12 @@
-CREATE TABLE Startrack(
-  "id" TEXT PRIMARY KEY,
+-- Basic Schema
+
+CREATE TABLE Callcenter(
+  "id" INTEGER PRIMARY KEY,
+  "name" TEXT
+);
+
+CREATE TABLE Call(
+  "id" TEXT,
   "timestamp" TEXT,
   "queue" TEXT,
   "agent" TEXT,
@@ -15,43 +22,36 @@ CREATE TABLE Startrack(
   "sentiment_t70" REAL,
   "sentiment_t80" REAL,
   "sentiment_t90" REAL,
-  "sentiment_t100" REAL
+  "sentiment_t100" REAL,
+  "call_center_id" INTEGER,
+  PRIMARY KEY (id, call_center_id), -- Composite PK for CC+id
+  FOREIGN KEY(call_center_id) REFERENCES Callcenter(id)
 );
 
 CREATE TABLE Topic(
-  "id" TEXT PRIMARY KEY,
+  "id" TEXT,
   "description" TEXT
+  "call_center_id" INTEGER,
+  PRIMARY KEY (id, call_center_id), -- Composite PK for CC+id
+  FOREIGN KEY (call_center_id) REFERENCES Callcenter (id)
 );
 
-INSERT INTO Topic VALUES (0, 'Confirmation');
-INSERT INTO Topic VALUES (1, 'Customer Service - Investigation');
-INSERT INTO Topic VALUES (2, 'Post Office');
-INSERT INTO Topic VALUES (3, 'Customer Service Board / Depot');
-INSERT INTO Topic VALUES (4, 'Long Hold / Auto-Response');
-INSERT INTO Topic VALUES (5, 'Long Hold / Ads');
-INSERT INTO Topic VALUES (6, 'Custimer Service / Next Flight / Quote');
-INSERT INTO Topic VALUES (7, 'Booking Reference');
-INSERT INTO Topic VALUES (8, 'Accounts');
-INSERT INTO Topic VALUES (9, 'Goods Description');
+-- Create StarTrack
+INSERT INTO Callcenter VALUES (0, 'StarTrack');
+INSERT INTO Callcenter VALUES (1, 'NewsCorp');
+
+-- Topics for StarTrack
+INSERT INTO Topic VALUES (0, 'Confirmation', 0);
+INSERT INTO Topic VALUES (1, 'Customer Service - Investigation', 0);
+INSERT INTO Topic VALUES (2, 'Post Office', 0);
+INSERT INTO Topic VALUES (3, 'Customer Service Board / Depot', 0);
+INSERT INTO Topic VALUES (4, 'Long Hold / Auto-Response', 0);
+INSERT INTO Topic VALUES (5, 'Long Hold / Ads', 0);
+INSERT INTO Topic VALUES (6, 'Customer Service / Next Flight / Quote', 0);
+INSERT INTO Topic VALUES (7, 'Booking Reference', 0);
+INSERT INTO Topic VALUES (8, 'Accounts', 0);
+INSERT INTO Topic VALUES (9, 'Goods Description', 0);
 
 .mode csv
 .import data/startrack.csv startrack
 .save data/startrack.sqlite
-
--- UPDATE startrack SET sentiment_t10 = NULL WHERE sentiment_t10 = '';
--- UPDATE startrack SET sentiment_t20 = NULL WHERE sentiment_t20 = '';
--- UPDATE startrack SET sentiment_t30 = NULL WHERE sentiment_t30 = '';
--- UPDATE startrack SET sentiment_t40 = NULL WHERE sentiment_t40 = '';
--- UPDATE startrack SET sentiment_t50 = NULL WHERE sentiment_t50 = '';
--- UPDATE startrack SET sentiment_t60 = NULL WHERE sentiment_t60 = '';
--- UPDATE startrack SET sentiment_t70 = NULL WHERE sentiment_t70 = '';
--- UPDATE startrack SET sentiment_t80 = NULL WHERE sentiment_t80 = '';
--- UPDATE startrack SET sentiment_t90 = NULL WHERE sentiment_t90 = '';
--- UPDATE startrack SET sentiment_t100 = NULL WHERE sentiment_t100 = '';
-
--- UPDATE startrack SET hot_topic_1_name = NULL WHERE hot_topic_1_name = '';
--- UPDATE startrack SET hot_topic_1_value = NULL WHERE hot_topic_1_value = '';
--- UPDATE startrack SET hot_topic_2_name = NULL WHERE hot_topic_2_name = '';
--- UPDATE startrack SET hot_topic_2_value = NULL WHERE hot_topic_2_value = '';
--- UPDATE startrack SET hot_topic_3_name = NULL WHERE hot_topic_3_name = '';
--- UPDATE startrack SET hot_topic_3_value = NULL WHERE hot_topic_3_value = '';
