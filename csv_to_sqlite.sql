@@ -13,6 +13,7 @@ CREATE TABLE Call(
   "duration" REAL,
   "num_tokens" INTEGER,
   "most_prominent_topic" TEXT,
+  "call_center_id" INTEGER,
   "sentiment_t10" REAL,
   "sentiment_t20" REAL,
   "sentiment_t30" REAL,
@@ -23,14 +24,14 @@ CREATE TABLE Call(
   "sentiment_t80" REAL,
   "sentiment_t90" REAL,
   "sentiment_t100" REAL,
-  "call_center_id" INTEGER,
   PRIMARY KEY (id, call_center_id), -- Composite PK for CC+id
-  FOREIGN KEY(call_center_id) REFERENCES Callcenter(id)
+  FOREIGN KEY (call_center_id) REFERENCES Callcenter (id)
+  FOREIGN KEY (most_prominent_topic) REFERENCES Topic (id)
 );
 
 CREATE TABLE Topic(
   "id" TEXT,
-  "description" TEXT
+  "description" TEXT,
   "call_center_id" INTEGER,
   PRIMARY KEY (id, call_center_id), -- Composite PK for CC+id
   FOREIGN KEY (call_center_id) REFERENCES Callcenter (id)
@@ -53,5 +54,5 @@ INSERT INTO Topic VALUES (8, 'Accounts', 0);
 INSERT INTO Topic VALUES (9, 'Goods Description', 0);
 
 .mode csv
-.import data/startrack.csv startrack
-.save data/startrack.sqlite
+.import data/startrack.csv call
+-- .save data/startrack.sqlite

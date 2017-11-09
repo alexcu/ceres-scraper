@@ -19,7 +19,7 @@ def avg_sentiment(sentiment_data, t0, t1):
         return None
 
 
-def process_call(call_id, call_data):
+def process_call(call_id, call_data, call_center_id):
     if call_data["topics"] is None or call_data["sentiment"] is None:
         return None
 
@@ -60,16 +60,17 @@ def process_call(call_id, call_data):
         "agent": call_data["stats"]["agent"],
         "duration": str(call_data["stats"]["duration"]),
         "num_tokens": str(call_data["stats"]["num_tokens"]),
-        "most_prominent_topic_id": topic_prominence[0]
+        "most_prominent_topic_id": topic_prominence[0],
+        "call_center_id": call_center_id
     }
 
     return {**static, **interpolated_sentiment}
 
 
-def csvify(raw_data):
+def csvify(raw_data, call_center_id):
     print_headers = True
     for call_id, call_data in raw_data.items():
-        data_for_call = process_call(call_id, call_data)
+        data_for_call = process_call(call_id, call_data, call_center_id)
         if data_for_call is None:
             continue
         if print_headers is True:
@@ -79,15 +80,18 @@ def csvify(raw_data):
 
 
 def main():
-    assert len(sys.argv) - 1 >= 1, "Must provide JSON input file"
+    assert len(sys.argv) - 1 >= 2, "Must provide JSON input file"
 
     in_file = sys.argv[1]
     assert in_file != None, "Missing JSON input"
 
+    call_center_id = sys.argv[2]
+    assert call_center_id != None, "Missing Call Centre ID"
+
     with open(in_file, 'r') as fptr:
         raw_data = json.load(fptr)
 
-    csvify(raw_data)
+    csvify(raw_data, call_center_id)
 
 
 if __name__ == '__main__':
