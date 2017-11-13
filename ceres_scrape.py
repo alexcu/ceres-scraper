@@ -20,10 +20,14 @@ def avg_sentiment(sentiment_data, t0, t1):
         return None
 
 
-def process_sentiment(call_data, sentiment_type):
+def process_sentiment(call_data, sentiment_type, src_sentiment_data = None):
     assert sentiment_type in ["mono", "agent", "client"]
-    sentiment = dict(zip(call_data["sentiment"][sentiment_type]["time"],
-                         call_data["sentiment"][sentiment_type]["sentiment"]))
+    if src_sentiment_data is not None:
+        sentiment_data = src_sentiment_data
+    else:
+        sentiment_data = call_data["sentiment"][sentiment_type]
+    sentiment = dict(zip(sentiment_data["time"],
+                         sentiment_data["sentiment"]))
     normalized_sentiment = []
 
     t0 = 0
@@ -60,7 +64,11 @@ def process_call(call_id, call_data, call_center_id):
     if call_data["topics"] is None or call_data["sentiment"] is None:
         return None
 
-    mono_sentiment = process_sentiment(call_data, "mono")
+    # TODO: Quick fix for old StarTrack data... no such key mono so force src.
+    if "mono" not in call_data["sentiment"]:
+        mono_sentiment = process_sentiment(call_data, "mono", call_data["sentiment"])
+    else:
+        mono_sentiment = process_sentiment(call_data, "mono")
 
     has_dual_track_sentiment = ("agent" in call_data["sentiment"] and
                                 "client" in call_data["sentiment"])
