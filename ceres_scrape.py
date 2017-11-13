@@ -8,6 +8,7 @@ from scipy import interpolate
 
 NUM_PERCENTILES = 10
 BASELINE_START_SENTIMENT = 50.0
+BASELINE_END_SENTIMENT = 75.0
 
 
 def avg_sentiment(sentiment_data, t0, t1):
@@ -19,12 +20,10 @@ def avg_sentiment(sentiment_data, t0, t1):
         return None
 
 
-def process_call(call_id, call_data, call_center_id):
-    if call_data["topics"] is None or call_data["sentiment"] is None:
-        return None
-
-    sentiment = dict(zip(call_data["sentiment"]["time"],
-                         call_data["sentiment"]["sentiment"]))
+def process_sentiment(call_data, sentiment_type):
+    assert sentiment_type in ["mono", "agent", "client"]
+    sentiment = dict(zip(call_data["sentiment"][sentiment_type]["time"],
+                         call_data["sentiment"][sentiment_type]["sentiment"]))
     normalized_sentiment = []
 
     t0 = 0
@@ -37,6 +36,11 @@ def process_call(call_id, call_data, call_center_id):
         normalized_sentiment.append(avg)
         t0 = t1
 
+    # Set baseline end sentiment if no sentiment was found on final t
+    last_sentiment = len(normalized_sentiment) - 1
+    if normalized_sentiment[last_sentiment] is None:
+        normalized_sentiment[last_sentiment] = BASELINE_END_SENTIMENT
+
     # Go through averages, find any none and use spline interpolation
     # to find the new value
     interpolated_sentiment = {}
@@ -47,8 +51,25 @@ def process_call(call_id, call_data, call_center_id):
         if sentiment is None:
             sentiment = interpolate.splev(t, tck, der=0)
         actual_t = (t + 1) * 10
-        interpolated_sentiment["sentiment_t{}".format(
-            actual_t)] = str(sentiment)
+        key = "{}_sentiment_t{}".format(sentiment_type, actual_t)
+        interpolated_sentiment[key] = sentiment
+
+    return interpolated_sentiment
+
+def process_call(call_id, call_data, call_center_id):
+    if call_data["topics"] is None or call_data["sentiment"] is None:
+        return None
+
+    mono_sentiment = process_sentiment(call_data, "mono")
+
+    has_dual_track_sentiment = ("agent" in call_data["sentiment"] and
+                                "client" in call_data["sentiment"])
+
+    agent_sentiment = {}
+    client_sentiment = {}
+    if has_dual_track_sentiment:
+        agent_sentiment = process_sentiment(call_data, "agent")
+        client_sentiment = process_sentiment(call_data, "client")
 
     topic_prominence = list(call_data["topics"].keys())[0]
     date = call_data["stats"]["date"]
@@ -58,17 +79,17 @@ def process_call(call_id, call_data, call_center_id):
         "timestamp": "{} {}".format(date, time),
         "queue": call_data["stats"]["queue"],
         "agent": call_data["stats"]["agent"],
-        "duration": str(call_data["stats"]["duration"]),
-        "num_tokens": str(call_data["stats"]["num_tokens"]),
+        "duration": call_data["stats"]["duration"],
+        "num_tokens": call_data["stats"]["num_tokens"],
         "most_prominent_topic_id": topic_prominence[0],
-        "call_center_id": call_center_id
+        "call_center_id": call_center_id,
+        "has_dual_track_sentiment": has_dual_track_sentiment
     }
 
-    return {**static, **interpolated_sentiment}
+    return {**static, **mono_sentiment, **agent_sentiment, **client_sentiment}
 
 
-def csvify(raw_data, call_center_id):
-    print_headers = True
+def csvify(raw_data, call_center_id, print_headers):
     for call_id, call_data in raw_data.items():
         data_for_call = process_call(call_id, call_data, call_center_id)
         if data_for_call is None:
@@ -76,11 +97,11 @@ def csvify(raw_data, call_center_id):
         if print_headers is True:
             print_headers = False
             print(",".join(data_for_call.keys()))
-        print(",".join(data_for_call.values()))
+        print(",".join([str(v) for v in data_for_call.values()]))
 
 
 def main():
-    assert len(sys.argv) - 1 >= 2, "Must provide JSON input file"
+    assert len(sys.argv) - 1 >= 2, "Must provide JSON input file and call centre ID"
 
     in_file = sys.argv[1]
     assert in_file != None, "Missing JSON input"
@@ -88,10 +109,12 @@ def main():
     call_center_id = sys.argv[2]
     assert call_center_id != None, "Missing Call Centre ID"
 
+    print_headers = bool(sys.argv[3]) if len(sys.argv) - 1 >= 3 else False
+
     with open(in_file, 'r') as fptr:
         raw_data = json.load(fptr)
 
-    csvify(raw_data, call_center_id)
+    csvify(raw_data, call_center_id, print_headers)
 
 
 if __name__ == '__main__':
