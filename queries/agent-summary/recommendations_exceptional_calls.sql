@@ -1,17 +1,31 @@
 SELECT
   id,
   timestamp,
-  (
-    sentiment_t10 +
-    sentiment_t20 +
-    sentiment_t30 +
-    sentiment_t40 +
-    sentiment_t50 +
-    sentiment_t60 +
-    sentiment_t70 +
-    sentiment_t80 +
-    sentiment_t90 +
-    sentiment_t100
+  IFNULL(
+    (
+      client_sentiment_t10 +
+      client_sentiment_t20 +
+      client_sentiment_t30 +
+      client_sentiment_t40 +
+      client_sentiment_t50 +
+      client_sentiment_t60 +
+      client_sentiment_t70 +
+      client_sentiment_t80 +
+      client_sentiment_t90 +
+      client_sentiment_t100
+    ),
+    (
+      mono_sentiment_t10 +
+      mono_sentiment_t20 +
+      mono_sentiment_t30 +
+      mono_sentiment_t40 +
+      mono_sentiment_t50 +
+      mono_sentiment_t60 +
+      mono_sentiment_t70 +
+      mono_sentiment_t80 +
+      mono_sentiment_t90 +
+      mono_sentiment_t100
+    )
   ) / 10 AS sentiment_score
 FROM Call
 WHERE agent = {{agent_name}}
