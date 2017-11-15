@@ -78,6 +78,11 @@ def process_call(call_id, call_data, call_center_id):
     if has_dual_track_sentiment:
         agent_sentiment = process_sentiment(call_data, "agent")
         client_sentiment = process_sentiment(call_data, "client")
+    else:
+        # Fill with ''
+        for i in range(0, 100, 10):
+            agent_sentiment["agent_sentiment_t{}".format(i)] = ''
+            client_sentiment["client_sentiment_t{}".format(i)] = ''
 
     topic_prominence = list(call_data["topics"].keys())[0]
     date = call_data["stats"]["date"]

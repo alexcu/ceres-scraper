@@ -1,6 +1,6 @@
 SELECT
   pct AS call_duration,
-  "Overall" AS type,
+  'Overall' AS type,
   CASE pct
     WHEN 10 THEN AVG(mono_sentiment_t10)
     WHEN 20 THEN AVG(mono_sentiment_t20)
@@ -22,7 +22,7 @@ FROM Call, (
     WHERE pct < 100
   )
   SELECT pct FROM Percentiles
-)
+) AS _
 WHERE call_center_id = {{call_center_id}}
 [[AND agent = {{agent_name}}]]
 [[AND DATE(timestamp) >= {{date_range_start}}]]
@@ -33,7 +33,7 @@ UNION ALL
 
 SELECT
   pct AS call_duration,
-  "Client" AS type,
+  'Client' AS type,
   CASE pct
     WHEN 10 THEN AVG(client_sentiment_t10)
     WHEN 20 THEN AVG(client_sentiment_t20)
@@ -55,7 +55,7 @@ FROM Call, (
     WHERE pct < 100
   )
   SELECT pct FROM Percentiles
-)
+) AS _
 WHERE call_center_id = {{call_center_id}}
 [[AND agent = {{agent_name}}]]
 [[AND DATE(timestamp) >= {{date_range_start}}]]
@@ -66,7 +66,7 @@ UNION ALL
 
 SELECT
   pct AS call_duration,
-  " Agent" AS type,
+  ' Agent' AS type,
   CASE pct
     WHEN 10 THEN AVG(agent_sentiment_t10)
     WHEN 20 THEN AVG(agent_sentiment_t20)
@@ -88,7 +88,7 @@ FROM Call, (
     WHERE pct < 100
   )
   SELECT pct FROM Percentiles
-)
+) AS _
 WHERE call_center_id = {{call_center_id}}
 [[AND agent = {{agent_name}}]]
 [[AND DATE(timestamp) >= {{date_range_start}}]]

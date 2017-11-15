@@ -7,4 +7,4 @@ FROM (
     [[AND DATE(timestamp) >= {{date_range_start}}]]
     [[AND DATE(timestamp) <= {{date_range_end}}]]
     GROUP BY agent, DATE(timestamp)
-);
+) AS _;

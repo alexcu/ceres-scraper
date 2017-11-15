@@ -1,6 +1,6 @@
 SELECT
     -- If we support agent_sentiment_score then use that, else default to mono
-    IFNULL(AVG(agent_sentiment_score), AVG(mono_sentiment_score)) AS sentiment_score
+    COALESCE(AVG(agent_sentiment_score), AVG(mono_sentiment_score)) AS sentiment_score
 FROM (
     SELECT (
         mono_sentiment_t10 +
@@ -31,4 +31,4 @@ FROM (
     [[AND agent = {{agent_name}}]]
     [[AND DATE(timestamp) >= {{date_range_start}}]]
     [[AND DATE(timestamp) <= {{date_range_end}}]]
-);
+) AS _;

@@ -1,7 +1,7 @@
 SELECT
   id,
   timestamp,
-  IFNULL(
+  COALESCE(
     (
       client_sentiment_t10 +
       client_sentiment_t20 +
