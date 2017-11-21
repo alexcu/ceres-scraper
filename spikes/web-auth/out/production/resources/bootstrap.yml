@@ -1,0 +1,22 @@
+---
+# Default config
+spring:
+  application:
+    name: spring-beaut-auth                         # Vault will look for config at /secret/{application.name}
+  cloud:
+    vault:
+      enabled: false                                # Use Vault for config
+      scheme: http                                  # Connection protocol
+      host: localhost                               # Hostname
+      port: 8200                                    # Port number
+      token: 6d79c06f-6b75-76ea-2079-8f386d64771b   # Access token - varies per user
+      fail-fast: true                               # Abort startup if Vault can't be contacted
+
+---
+# Production overrides
+spring:
+  profiles: production
+  cloud:
+    vault:
+      scheme: https             # Use HTTPS for Vault comms
+      authentication: AWS_EC2   # Authenticate to Vault using AWS credentials

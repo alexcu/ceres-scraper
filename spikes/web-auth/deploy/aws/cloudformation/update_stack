@@ -1,0 +1,15 @@
+#!/bin/bash
+
+change_set=$1
+[ -z $change_set ] && echo "ERROR: Must pass a name for the change set." && exit 1
+
+script_dir=$(dirname $0)
+$script_dir/upload_templates
+
+aws cloudformation create-change-set \
+--stack-name spring-boot-reference-app-$ENVIRONMENT \
+--change-set-name $1 \
+--template-url https://s3-ap-southeast-2.amazonaws.com/serenity-cloudformation-templates/spring-boot-reference-app.yml \
+--parameters \
+ParameterKey=VPCStack,ParameterValue=$VPC_STACK,UsePreviousValue=false      \
+ParameterKey=Environment,ParameterValue=$ENVIRONMENT,UsePreviousValue=false \

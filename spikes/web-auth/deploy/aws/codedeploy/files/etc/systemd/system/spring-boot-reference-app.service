@@ -1,0 +1,13 @@
+[Unit]
+Description=spring-boot-reference-app
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/java -jar /usr/local/bin/spring-boot-reference-app/spring-boot-reference-app-1.0.jar
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartPreventExitStatus=255
+Type=idle
+
+[Install]
+WantedBy=multi-user.target

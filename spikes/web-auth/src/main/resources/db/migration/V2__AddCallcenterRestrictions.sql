@@ -1,0 +1,8 @@
+CREATE TABLE Callcenters (
+  id INTEGER NOT NULL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  domain VARCHAR(255) NOT NULL
+);
+
+ALTER TABLE Users ADD COLUMN callcenter_id INTEGER NOT NULL;
+ALTER TABLE Users ADD CONSTRAINT callcenter_fk FOREIGN KEY (callcenter_id) REFERENCES Callcenters(id);

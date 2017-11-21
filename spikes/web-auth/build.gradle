@@ -1,0 +1,75 @@
+apply plugin: 'java'                        // Java compilation
+apply plugin: 'idea'                        // IntelliJ IDEA project generation/support
+apply plugin: 'org.springframework.boot'    // Spring Boot packaging/support
+apply plugin: 'findbugs'                    // Java bytecode static analysis
+apply plugin: 'pmd'                         // Java source code static analysis
+apply plugin: 'checkstyle'                  // Java source code style checking
+
+version = '0.0.1-SNAPSHOT'    // Application version - will be appended to output JAR
+sourceCompatibility = 1.8     // Java version
+
+// Spring Boot build script
+buildscript {
+    ext {
+        springBootVersion = '1.5.4.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+// Repository listing
+repositories {
+    mavenCentral()
+}
+
+// Dependencies
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-actuator')        // Adds ops-related endpoints
+    //compile('org.springframework.cloud:spring-cloud-starter-vault-config')  // Secure, cntralised config via Vault
+    //compile('org.springframework.cloud:spring-cloud-starter-zipkin')        // Request tracing via Zipkin
+    compile('org.springframework.boot:spring-boot-starter-web')             // Spring Boot MVC
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')        // Java Persistence API for data access
+    compile('org.springframework.security.oauth:spring-security-oauth2')    // OAuth2 support
+    compile('com.google.code.findbugs:annotations:3.0.1')                   // FindBugs annotations
+    compile('com.google.code.findbugs:jsr305:3.0.1')                        // FindBugs bytecode analysis
+    compile('com.zaxxer:HikariCP:2.6.1')                                    // Fast DB connection pooling
+    compile('org.postgresql:postgresql:42.0.0')                             // Postgres DB driver
+    compile('org.flywaydb:flyway-core:4.2.0')                               // Database migrations
+    compileOnly('org.projectlombok:lombok')                                 // Boilerplate reduction
+
+    runtime('org.springframework.boot:spring-boot-devtools')                // Development tools (LiveReload)
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')        // Spring Boot testing
+    testCompile('org.springframework.restdocs:spring-restdocs-mockmvc')
+}
+
+// Extra properties
+ext {
+    springCloudVersion = 'Dalston.SR1'
+}
+
+// Spring Cloud dependency management
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+// Checkstyle configuration - uses DSTIL config in .git-hooks
+checkstyle {
+    configFile = rootProject.file('.git-hooks/pre_commit/resources/dstil_checkstyle.xml')
+    toolVersion = '6.14.1'
+    ignoreFailures = false
+}
+
+tasks.withType(Checkstyle) {
+    ignoreFailures = false
+}
+
+checkstyleMain {
+    ignoreFailures = false
+}

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Applies any changes to service scripts and starts the service.
+systemctl daemon-reload
+systemctl enable spring-boot-reference-app.service
+systemctl start spring-boot-reference-app.service

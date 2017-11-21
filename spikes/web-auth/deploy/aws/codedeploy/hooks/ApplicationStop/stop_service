@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Checks if the service is currently running and stops it.
+# This might be a good place to tell your app it's about to be shut down.
+
+service=spring-boot-reference-app
+
+if systemctl is-active $service
+then
+  echo "Stopping $service..."
+  systemctl stop $service
+else
+  echo "$service not installed/running; skipping."
+fi

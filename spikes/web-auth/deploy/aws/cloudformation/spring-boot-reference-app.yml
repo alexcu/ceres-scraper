@@ -1,0 +1,143 @@
+# ==[ Parameters ]==================================================================
+Parameters:
+  VPCStack:
+    Description: Name of the CloudFormation stack that contains the VPC resources
+    Type: String
+  Environment:
+    Description: Name of the target deployment environment. This will be appended to all names where possible.
+    Type: String
+    AllowedValues:
+      - master
+      - staging-internal
+      - staging-external
+      - production
+
+# ==[ Conditions ]==================================================================
+Conditions:
+  IsProductionEnvironment: !Equals ["production", !Ref Environment]
+
+# ==[ Resources ]===================================================================
+Resources:
+  # ==[ Auto-Scaling ]================================================================
+
+  # Launch Configuration for Ubuntu 16.04 LTS x64
+  UbuntuWithCodeDeployAgent:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: ami-4e686b2d   # AWS-provided Ubuntu Server 16.04 LTS (HVM), 64-bit, SSD Volume Type
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "${VPCStack}-${Environment}::IAM::CodeDeployInstanceProfileArn"
+      AssociatePublicIpAddress: true
+      InstanceMonitoring: true
+      InstanceType: t2.micro
+      KeyName: serenity-cloud-ssh
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::SecurityGroup::SSHDeakinBurwood"
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::SecurityGroup::SSHOffsite"
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::SecurityGroup::OutboundInternet"
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::SecurityGroup::PublicHTTP"
+      UserData:
+        Fn::Base64:
+          Fn::Sub: |
+            #!/bin/bash
+
+            # Make environment name accessible system-wide
+            echo "ENVIRONMENT=${Environment}" >> /etc/environment
+
+            # Install CodeDeploy agent
+            apt-get -y install ruby
+            curl https://aws-codedeploy-${ AWS::Region }.s3.amazonaws.com/latest/install -o /tmp/install_codedeploy_agent
+            chmod +x /tmp/install_codedeploy_agent
+            /tmp/install_codedeploy_agent auto
+
+            systemctl start codedeploy-agent.service
+
+  # Auto-Scaling Group
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchConfigurationName: !Ref UbuntuWithCodeDeployAgent
+      LoadBalancerNames:
+        - !Ref LoadBalancer
+      MaxSize: 1
+      MetricsCollection:
+        - Granularity: 1Minute
+      MinSize: 1
+      Tags:
+        - Key: Name
+          Value: !Sub "spring-boot-reference-app-autoscaling-group-${Environment}"
+          PropagateAtLaunch: true
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::Subnet::Subnet1"
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::Subnet::Subnet2"
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: True
+
+  # Elastic Load Balancer
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      ConnectionSettings:
+        IdleTimeout: 60
+      CrossZone: true
+      HealthCheck:
+        Target: TCP:80
+        Interval: 30
+        Timeout: 5
+        HealthyThreshold: 10
+        UnhealthyThreshold: 2
+      LoadBalancerName: !Sub "spring-boot-reference-app-lb-${Environment}"
+      Listeners:
+        # @TODO: Revise once API gateway is set up properly
+        - Protocol: SSL
+          LoadBalancerPort: 443
+          InstanceProtocol: TCP
+          InstancePort: 80
+          SSLCertificateId: arn:aws:acm:ap-southeast-2:558255097964:certificate/593c3492-55ab-447d-a2b0-31fad843b1bc
+        - Protocol: TCP
+          LoadBalancerPort: 80
+          InstanceProtocol: TCP
+          InstancePort: 80
+      Policies:
+        - PolicyName: !Sub "spring-boot-reference-app-lb-policy-${Environment}"
+          PolicyType: SSLNegotiationPolicyType
+          Attributes:
+            - Name: Reference-Security-Policy
+              Value: ELBSecurityPolicy-2016-08
+      # @TODO: Convert to internal load balancer once API gateway is set up properly
+      Scheme: internet-facing
+      SecurityGroups:
+        # @TODO: Revise once API gateway is set up properly
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::SecurityGroup::PublicHTTP"
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::SecurityGroup::PublicHTTPS"
+      Subnets:
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::Subnet::Subnet1"
+        - Fn::ImportValue: !Sub "${VPCStack}-${Environment}::Subnet::Subnet2"
+
+  # ==[ CodeDeploy ]==================================================================
+
+  # Application
+  CodeDeployApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub "spring-boot-reference-app-${Environment}"
+
+  # Deployment Group
+  DeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName:
+        Ref: CodeDeployApp
+      AutoScalingGroups:
+        - Ref: AutoScalingGroup
+      DeploymentConfigName: CodeDeployDefault.AllAtOnce
+      DeploymentGroupName: !Sub "spring-boot-reference-app-${Environment}"
+      ServiceRoleArn:
+          Fn::ImportValue: !Sub "${VPCStack}-${Environment}::IAM::CodeDeployServiceRoleArn"
+
+  # S3 bucket to receive application bundles
+  CodeDeployRevisionBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "spring-boot-reference-app-${Environment}-codedeploy-bundles"

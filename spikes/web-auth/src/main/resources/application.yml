@@ -1,0 +1,43 @@
+---
+spring:
+  application:
+    name: Ceres
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/spring_beaut_auth
+    username: postgres
+    password: postgres
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    generate-ddl: true
+    hibernate:
+      ddl-auto: validate
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+zipkin:
+  enabled: false
+
+# Uncomment the lines below if the Authorisation Server is hosted separately.
+security:
+  oauth2:
+    resource:
+      filterOrder: 3
+#      userInfoUri: https://your-auth-server/user
+    client:
+      authenticationScheme: header
+#      clientId: my-trusted-client-id
+#      clientSecret: my-trusted-client-secret
+#      accessTokenUri: https://your-auth-server/oauth/token
+#      checkTokenUri: https://your-auth-server/oauth/check_token
+#      userAuthorizationUri: https://your-auth-server/login
+#      clientAuthenticationScheme: form
+#    sso:
+#      login-path: https://your-auth-server/login

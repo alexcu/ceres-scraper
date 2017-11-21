@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if systemctl is-active nginx.service
+then
+  systemctl stop nginx.service
+fi
+
+ln -fs /etc/nginx/spring-boot-reference-app.conf /etc/nginx/nginx.conf
+systemctl restart nginx.service

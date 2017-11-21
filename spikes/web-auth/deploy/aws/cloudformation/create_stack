@@ -1,0 +1,11 @@
+#!/bin/bash
+
+script_dir=$(dirname $0)
+$script_dir/upload_templates
+
+aws cloudformation create-stack \
+--stack-name spring-boot-reference-app-$ENVIRONMENT \
+--template-url https://s3-ap-southeast-2.amazonaws.com/serenity-cloudformation-templates/spring-boot-reference-app.yml \
+--parameters \
+ParameterKey=VPCStack,ParameterValue=$VPC_STACK,UsePreviousValue=false      \
+ParameterKey=Environment,ParameterValue=$ENVIRONMENT,UsePreviousValue=false

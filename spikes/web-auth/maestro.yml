@@ -1,0 +1,8 @@
+---
+application_name: ceres
+template: spring-boot
+deployment_method: aws-codedeploy
+deploy_filters:
+  - appspec.yml
+  - deploy
+  - build/libs/*.jar
